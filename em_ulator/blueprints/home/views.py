@@ -44,6 +44,13 @@ def game(game_id):
     ]
     return render_template("game.html", tickets_by_group=tickets_by_group, game_id=game_id)
 
+@home_app.route("/game/<int:game_id>/force_tick", methods=["POST"])
+def force_tick(game_id):
+    game = Game.get_game(game_id)
+    game.tick()
+    redirect_url = f'/game/{game.id}'
+    return redirect(redirect_url)
+
 
 @home_app.route("/game/create", methods=["POST"])
 def create_game():

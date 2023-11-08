@@ -7,7 +7,13 @@
 
   </head>
   <body>
-    <h1>Game {{ game_id }}</h1>
+    <h1>Game {{ game_id }}
+    <div class="force-tick">
+      <form action="/game/{{ game_id }}/force_tick" method="POST">
+	<button type="submit">What about tomorrow?</button>
+      </form>
+    </div>
+    </h1>
     <div class="board">
       {% for column_name, tickets in tickets_by_group %}
       <div class="column">
