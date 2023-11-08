@@ -6,14 +6,13 @@
 
   </head>
   <body>
-    <h1>Hi Friendo</h1>
-    <h2>Active Games</h2>
-    {% for game in games %}
+    <h1>Game {{ game_id }}</h1>
+    {% for ticket in tickets %}
     <p>
-      <a href="../game/{{ game }}">Game {{ game }}</a>
+      {{ ticket.key }}
     </p>
     {% else %}
-    <p>No active games</p>
+    <p>No tickets in this game</p>
     {% endfor %}
   </body>
 </html>
