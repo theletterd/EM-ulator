@@ -15,13 +15,13 @@ class Game(db.Model):
         return game
 
 
-    def exists(game_id):
+    def get_game(game_id):
         game = Game.query.filter_by(id=game_id).first()
-        return bool(game)
+        return game
 
-    def get_all_tickets(game_id):
+    def get_all_tickets(self):
         # probably a better way to do this.
-        projects = Project.query.filter_by(game_id=game_id).all()
+        projects = Project.query.filter_by(game_id=self.id).all()
         project_ids = [project.id for project in projects]
         tickets = Ticket.query.filter(
             Ticket.project_id.in_(project_ids)
@@ -31,9 +31,9 @@ class Game(db.Model):
 
 
     def tick(self):
-        self.generate_tickets()
-        self.transition_unfinished_tickets()
-
+        tickets = self.get_all_tickets()
+        for ticket in tickets:
+            ticket.transition()
 
     def generate_tickets(self):
         pass
@@ -58,6 +58,7 @@ class Ticket(db.Model):
     project = db.relationship('Project')
     title = db.Column(db.String(120), nullable=False)
     description = db.Column(db.String(2048), nullable=False)
+    tick_count = db.Column(db.Integer, nullable=False, default=1)
 
     # e.g., JIRA-1234
     key = db.Column(db.String(120), unique=True, nullable=False)
@@ -85,6 +86,10 @@ class Ticket(db.Model):
 
 
     def transition(self):
+        # no transitioning Closed tickets.
+        if self.state_id == TicketState.CLOSED:
+            return
+
         # maybe we should randomly generate a size and use that as a probability to transition
         probability = 0.25
         # or maybe on each tick some number of points is distrubuted among in-progress tickets.
@@ -92,6 +97,11 @@ class Ticket(db.Model):
         # with some probability, move the ticket forward.
         if random.random() < probability:
             self.state_id = self.state.next_state_id
+            self.tick_count = 0
+        else:
+            self.tick_count += 1
+
+        self.mutate()
 
         db.session.add(self)
         db.session.commit()
@@ -100,9 +110,10 @@ class Ticket(db.Model):
     def mutate(self):
         # instead of transitioning forward, something terrible has happened
         # and we've gone to some state previously defined.
-        probability = 0.001
+        probability = 0.01
         if random.random() < probability:
-            self.state_id = 0
+            self.state_id = random.randrange(self.state_id)
+            self.tick_count = 0
 
         db.session.add(self)
         db.session.commit()

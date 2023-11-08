@@ -20,22 +20,22 @@ def index():
     fake_game_numbers = sorted(random.sample(range(100), 10))
     return render_template("index.html", games=fake_game_numbers)
 
+
 @home_app.route("/game/<int:game_id>/")
 def game(game_id):
     # ok so what we want to do now is to load up all tickets  associated
     # with this game, through projects.
     # so let's jank this bad boy up
-    if not Game.exists(game_id):
+    game = Game.get_game(game_id)
+    if not game:
         return "no such game, dawg"
 
-    tickets = Game.get_all_tickets(game_id)
-    for ticket in tickets:
-        ticket.transition()
-        ticket.mutate()
-
+    game.tick()
+    tickets = game.get_all_tickets()
     grouped_tickets = defaultdict(list)
     for ticket in tickets:
         grouped_tickets[ticket.state.name].append(ticket)
+
 
     tickets_by_group = [
         ("To Do", grouped_tickets["Blocked"] + grouped_tickets["Open"]),

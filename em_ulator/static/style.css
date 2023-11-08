@@ -1,3 +1,4 @@
+
 .ticket_state {
     border-radius: 5px;
     color: white;
@@ -42,4 +43,18 @@
     margin: 5px;
     border-radius: 7px;
     border: 1px solid #bfb3a2;
+}
+
+.ticket-progress {
+    display: flex;
+    flex-direction: row;
+}
+
+.tick {
+    background-color: #b6a5b7;
+    border-radius: 5px;
+    width: 10px;
+    height: 10px;
+    padding: 2px;
+    margin: 2px 2px;
 }
