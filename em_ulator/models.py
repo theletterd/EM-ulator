@@ -6,6 +6,11 @@ from em_ulator import db
 class Game(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
+    def percent_complete(self):
+        tickets = self.get_all_tickets()
+        num_tickets = len(tickets)
+        num_complete_tickets = len(list(filter(lambda t: t.state_id is TicketState.CLOSED, tickets)))
+        return 100 * (num_complete_tickets / num_tickets)
 
     @staticmethod
     def create_new_game():
@@ -14,10 +19,13 @@ class Game(db.Model):
         db.session.commit()
         return game
 
-
     def get_game(game_id):
         game = Game.query.filter_by(id=game_id).first()
         return game
+
+    def get_all():
+        games = Game.query.all()
+        return games
 
     def get_all_tickets(self):
         # probably a better way to do this.

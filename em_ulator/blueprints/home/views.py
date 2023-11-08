@@ -17,8 +17,8 @@ home_app = Blueprint('home', __name__)
 @home_app.route("/")
 def index():
     # list out active games
-    fake_game_numbers = sorted(random.sample(range(100), 10))
-    return render_template("index.html", games=fake_game_numbers)
+    games = Game.get_all()
+    return render_template("index.html", games=games)
 
 
 @home_app.route("/game/<int:game_id>/")
@@ -30,7 +30,6 @@ def game(game_id):
     if not game:
         return "no such game, dawg"
 
-    game.tick()
     tickets = game.get_all_tickets()
     grouped_tickets = defaultdict(list)
     for ticket in tickets:
@@ -46,7 +45,7 @@ def game(game_id):
     return render_template("game.html", tickets_by_group=tickets_by_group, game_id=game_id)
 
 
-@home_app.route("/game/create")
+@home_app.route("/game/create", methods=["POST"])
 def create_game():
     game = Game.create_new_game()
     from em_ulator import db

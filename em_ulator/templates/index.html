@@ -6,10 +6,13 @@
   </head>
   <body>
     <h1>Hi Friendo</h1>
+    <form action="/game/create" method="POST">
+      <button type="submit">Create new Project</button>
+    </form>
     <h2>Active Games</h2>
     {% for game in games %}
     <p>
-      <a href="../game/{{ game }}">Game {{ game }}</a>
+      <a href="../game/{{ game.id }}">Game {{ game.id }}: {{ game.percent_complete()}}</a>
     </p>
     {% else %}
     <p>No active games</p>
