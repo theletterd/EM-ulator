@@ -1,18 +1,29 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta http-equiv="refresh" content="2">
-    <script type="text/javascript" src="../static/script.js"></script>
+    <!-- <meta http-equiv="refresh" content="2"> -->
+    <script type="text/javascript" src="/static/script.js"></script>
+    <link rel=stylesheet href="/static/style.css">
 
   </head>
   <body>
     <h1>Game {{ game_id }}</h1>
-    {% for ticket in tickets %}
-    <p>
-      {{ ticket.key }}
-    </p>
-    {% else %}
-    <p>No tickets in this game</p>
-    {% endfor %}
+    <div class="board">
+      {% for column_name, tickets in tickets_by_group %}
+      <div class="column">
+	<div class="column-title"> {{ column_name }}</div>
+	<div class="tickets">
+	  {% for ticket in tickets %}
+	    <div class="ticket">
+	      <div class="ticket-header">
+		{{ ticket.key }} - <span class="ticket_state" style="background-color: {{ ticket.state.color }}">{{ticket.state.name}}</span>
+	      </div>
+	      <div class="ticket-title">{{ ticket.title }}</div>
+	    </div>
+	    {% endfor %}
+	</div>
+      </div>
+      {% endfor %}
+    </div>
   </body>
 </html>

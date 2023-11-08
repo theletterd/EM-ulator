@@ -13,6 +13,7 @@ def create_app(test_config=None):
     with app.app_context():
         db.init_app(app)
         db.create_all()
+        models.TicketState.initialise_ticket_states()
 
     from em_ulator import blueprints
     app.register_blueprint(blueprints.home_app)

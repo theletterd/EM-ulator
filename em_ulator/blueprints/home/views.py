@@ -1,3 +1,4 @@
+from collections import defaultdict
 import random
 import string
 
@@ -8,7 +9,7 @@ from flask import redirect
 from em_ulator.models import Game
 from em_ulator.models import Project
 from em_ulator.models import Ticket
-
+from em_ulator import config
 
 home_app = Blueprint('home', __name__)
 
@@ -28,7 +29,21 @@ def game(game_id):
         return "no such game, dawg"
 
     tickets = Game.get_all_tickets(game_id)
-    return render_template("game.html", tickets=tickets, game_id=game_id)
+    for ticket in tickets:
+        ticket.transition()
+        ticket.mutate()
+
+    grouped_tickets = defaultdict(list)
+    for ticket in tickets:
+        grouped_tickets[ticket.state.name].append(ticket)
+
+    tickets_by_group = [
+        ("To Do", grouped_tickets["Blocked"] + grouped_tickets["Open"]),
+        ("In Progress", grouped_tickets["In Progress"]),
+        ("In Review", grouped_tickets["In Review"]),
+        ("Done", grouped_tickets["Closed"])
+    ]
+    return render_template("game.html", tickets_by_group=tickets_by_group, game_id=game_id)
 
 
 @home_app.route("/game/create")
@@ -46,8 +61,12 @@ def create_game():
     db.session.add(project)
     db.session.commit()
 
-    for i in range(10):
-        Ticket.new_ticket(project, f"new ticket yo: {i}", "stuffff")
+    for i in range(20):
+        Ticket.new_ticket(
+            project,
+            random.choice(config.ticket_names),
+            "stuffff"
+        )
 
     # then create a project
     # then create like 20 tickets in the project

@@ -61,8 +61,8 @@ class Ticket(db.Model):
 
     # e.g., JIRA-1234
     key = db.Column(db.String(120), unique=True, nullable=False)
-    #state_id = db.Column(db.Integer, db.ForeignKey('ticketstate.id'), nullable=False)
-    #state = db.relationship('TicketState')
+    state_id = db.Column(db.Integer, db.ForeignKey('ticket_state.id'), nullable=False)
+    state = db.relationship('TicketState', lazy='joined')
 
     @staticmethod
     def new_ticket(project, title, description):
@@ -76,13 +76,36 @@ class Ticket(db.Model):
             project_id=project.id,
             key=key,
             title=title,
-            description=description
+            description=description,
+            state_id=TicketState.OPEN
         )
 
         db.session.add(ticket)
         db.session.commit()
 
 
+    def transition(self):
+        # maybe we should randomly generate a size and use that as a probability to transition
+        probability = 0.25
+        # or maybe on each tick some number of points is distrubuted among in-progress tickets.
+        # this could get complex, so let's figure that out after the UI stuff.
+        # with some probability, move the ticket forward.
+        if random.random() < probability:
+            self.state_id = self.state.next_state_id
+
+        db.session.add(self)
+        db.session.commit()
+
+
+    def mutate(self):
+        # instead of transitioning forward, something terrible has happened
+        # and we've gone to some state previously defined.
+        probability = 0.001
+        if random.random() < probability:
+            self.state_id = 0
+
+        db.session.add(self)
+        db.session.commit()
 
 
 class TicketState(db.Model):
@@ -91,5 +114,35 @@ class TicketState(db.Model):
     # e.g., "Open", "In Progress", "Blocked", "Closed"
     name = db.Column(db.String(120), unique=True, nullable=False)
 
+    # store ticket transition data
+    next_state_id = db.Column(db.Integer, db.ForeignKey('ticket_state.id'), nullable=False)
+    next_state = db.relationship('TicketState')
+
     # store the 6-character hex-value
     color = db.Column(db.String(6), nullable=False)
+
+    # proper jank
+    BLOCKED = 0
+    OPEN = 1
+    IN_PROGRESS = 2
+    IN_REVIEW = 3
+    CLOSED = 4
+
+
+    def initialise_ticket_states():
+        TicketState.query.delete()
+        ticket_states = [
+            blocked := TicketState(id=TicketState.BLOCKED, name="Blocked", color="#d51643"),
+            open := TicketState(id=TicketState.OPEN, name="Open", color="#6540c6"),
+            in_progress := TicketState(id=TicketState.IN_PROGRESS, name="In Progress", color="#ff9900"),
+            in_review := TicketState(id=TicketState.IN_REVIEW, name="In Review", color="#2c8b93"),
+            closed := TicketState(id=TicketState.CLOSED, name="Closed", color="#12a451")
+        ]
+        blocked.next_state_id = open.id
+        open.next_state_id = in_progress.id
+        in_progress.next_state_id = in_review.id
+        in_review.next_state_id = closed.id
+        closed.next_state_id = closed.id
+
+        db.session.add_all(ticket_states)
+        db.session.commit()
