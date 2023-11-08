@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="refresh" content="2">
+    <script type="text/javascript" src="../static/script.js"></script>
+
+  </head>
+  <body>
+    <h1>Hi Friendo</h1>
+    <h2>Active Games</h2>
+    {% for game in games %}
+    <p>
+      <a href="../game/{{ game }}">Game {{ game }}</a>
+    </p>
+    {% else %}
+    <p>No active games</p>
+    {% endfor %}
+  </body>
+</html>
