@@ -50,7 +50,7 @@ class Game(db.Model):
 
         # ok motherfucker
         # we need to get the employees
-        employees = Employee.query.filter_by(game_id=self.id)
+        employees = Employee.query.filter_by(game_id=self.id).all()
 
         for employee in employees:
             remaining_effort = employee.productivity
@@ -95,8 +95,11 @@ class Game(db.Model):
                     remaining_effort -= effort_to_expend
                     print(f"{employee.name} worked on {ticket.key}")
                     if ticket.remaining_work == 0:
-                        ticket.move_to_review()
-                        print(f"{employee.name} put {ticket.key} out for review")
+                        potential_reviewers = set(employees)
+                        potential_reviewers.remove(employee)
+                        reviewer = random.choice(list(potential_reviewers))
+                        ticket.move_to_review(reviewer)
+                        print(f"{employee.name} put {ticket.key} out for review, and tagged {reviewer.name}")
 
             # Are there any tickets that are in progress?
             # if so, burn them down and move to in-review if appropriate
@@ -163,11 +166,13 @@ class Ticket(db.Model):
     original_sizing = db.Column(db.Integer, nullable=False)
     remaining_work = db.Column(db.Integer, nullable=False)
     update_tick = db.Column(db.Integer, nullable=False, default=0)
+    reviewer_id = db.Column(db.Integer, db.ForeignKey('employee.id'))
+    reviewer = db.relationship('Employee', lazy='joined', foreign_keys=[reviewer_id])
 
     # e.g., JIRA-1234
     key = db.Column(db.String(120), unique=True, nullable=False)
     assignee_id = db.Column(db.Integer, db.ForeignKey('employee.id'))
-    assignee = db.relationship('Employee', lazy='joined')
+    assignee = db.relationship('Employee', lazy='joined', foreign_keys=[assignee_id])
     state_id = db.Column(db.Integer, db.ForeignKey('ticket_state.id'), nullable=False)
     state = db.relationship('TicketState', lazy='joined')
 
@@ -202,9 +207,14 @@ class Ticket(db.Model):
     def is_closed(self):
         return self.state_id == TicketState.CLOSED
 
-    def move_to_review(self):
+    @property
+    def display_ticks(self):
+        return min(15, self.project.game.ticks_elapsed - self.update_tick)
+
+    def move_to_review(self, reviewer):
         self.state_id = TicketState.IN_REVIEW
         self.update_tick = self.project.game.ticks_elapsed
+        self.update_reviewer_id = reviewer.id
         db.session.add(self)
         db.session.commit()
 

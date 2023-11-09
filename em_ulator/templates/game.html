@@ -21,7 +21,7 @@
 	      <div class="ticket-title">{{ ticket.title }}</div>
 	      {% if not ticket.is_closed %}
 	      <div class="ticket-progress">
-		{% for tick in range(game.ticks_elapsed - ticket.update_tick) %}
+		{% for tick in range(ticket.display_ticks) %}
 		<div class="tick"></div>
 		{% endfor %}
 	      </div>
