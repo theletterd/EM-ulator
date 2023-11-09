@@ -14,7 +14,7 @@ class GameRunner():
 
             # transition each game
             print("sleeping for 5")
-            time.sleep(5)
+            time.sleep(2)
 
 
 if __name__ == '__main__':

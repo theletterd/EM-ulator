@@ -20,14 +20,20 @@
 	      </div>
 	      <div class="ticket-title">{{ ticket.title }}</div>
 	      {% if not ticket.is_closed %}
-	      <div class="ticket-progress">
-		{% for tick in range(ticket.display_ticks) %}
-		<div class="tick"></div>
-		{% endfor %}
-	      </div>
-	      {{ ticket.remaining_work }}
-	      {{ ticket.reviewer.name }}
-	      {% endif%}
+	        <div class="ticket-progress">
+		  {% for tick in range(ticket.display_ticks) %}
+	  	  <div class="tick"></div>
+		  {% endfor %}
+		</div>
+		<div>{{ ticket.remaining_work }}</div>
+
+	      {% endif %}
+	      {% if ticket.assignee %}
+		<div>Assignee: {{ ticket.assignee.name }}</div>
+	      {% endif %}
+	      {% if ticket.reviewer %}
+		<div>Reviewer: {{ ticket.reviewer.name }}</div>
+	      {% endif %}
 	    </div>
 	    {% endfor %}
 	</div>
