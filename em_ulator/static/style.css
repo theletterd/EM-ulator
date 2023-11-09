@@ -1,3 +1,14 @@
+body {
+}
+
+
+#header a {
+    text-decoration: none;
+    color: blue;
+    font-size: xxx-large;
+    font-family: monospace;
+}
+
 
 .ticket_state {
     border-radius: 5px;

@@ -120,7 +120,8 @@ class Ticket(db.Model):
         # and we've gone to some state previously defined.
         probability = 0.01
         if random.random() < probability:
-            self.state_id = random.randrange(self.state_id)
+            #self.state_id = random.randrange(self.state_id)
+            self.state_id = TicketState.BLOCKED
             self.tick_count = 0
 
         db.session.add(self)

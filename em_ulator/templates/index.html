@@ -1,10 +1,6 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <script type="text/javascript" src="../static/script.js"></script>
+{% extends "base.html" %}
 
-  </head>
-  <body>
+{% block content %}
     <h1>Hi Friendo</h1>
     <form action="/game/create" method="POST">
       <button type="submit">Create new Project</button>
@@ -17,5 +13,4 @@
     {% else %}
     <p>No active games</p>
     {% endfor %}
-  </body>
-</html>
+{% endblock %}
