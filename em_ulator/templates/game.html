@@ -25,7 +25,8 @@
 		<div class="tick"></div>
 		{% endfor %}
 	      </div>
-		{{ ticket.remaining_work }}
+	      {{ ticket.remaining_work }}
+	      {{ ticket.reviewer.name }}
 	      {% endif%}
 	    </div>
 	    {% endfor %}

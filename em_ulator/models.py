@@ -75,8 +75,10 @@ class Game(db.Model):
             # we'll end up.
             while remaining_effort > 0:
                 in_progress_tickets = Ticket.get_assigned_in_progress_tickets(employee.id)
+                tickets_to_review = Ticket.get_tickets_to_review(employee.id)
 
-                if not in_progress_tickets:
+                tickets_requiring_attention = in_progress_tickets + tickets_to_review
+                if not tickets_requiring_attention:
                     # get_next_ticket
                     ticket = Ticket.assign_new_ticket(employee.id)
                     if ticket:
@@ -88,18 +90,24 @@ class Game(db.Model):
                         remaining_effort = 0
                         continue
 
-
-                for ticket in in_progress_tickets:
+                for ticket in tickets_requiring_attention:
                     effort_to_expend = min(remaining_effort, ticket.remaining_work)
                     ticket.do_work(effort_to_expend)
                     remaining_effort -= effort_to_expend
-                    print(f"{employee.name} worked on {ticket.key}")
-                    if ticket.remaining_work == 0:
-                        potential_reviewers = set(employees)
-                        potential_reviewers.remove(employee)
-                        reviewer = random.choice(list(potential_reviewers))
-                        ticket.move_to_review(reviewer)
-                        print(f"{employee.name} put {ticket.key} out for review, and tagged {reviewer.name}")
+
+                    if ticket.state_id == TicketState.IN_PROGRESS:
+                        print(f"{employee.name} worked on {ticket.key}")
+                        if ticket.remaining_work == 0:
+                            potential_reviewers = set(employees)
+                            potential_reviewers.remove(employee)
+                            reviewer = random.choice(list(potential_reviewers))
+                            ticket.move_to_review(reviewer)
+                            print(f"{employee.name} put {ticket.key} out for review, and tagged {reviewer.name}")
+                    elif ticket.state_id == TicketState.IN_REVIEW:
+                        print(f"{employee.name} is reviewing {ticket.key}")
+                        if ticket.remaining_work == 0:
+                            ticket.move_to_closed()
+                            print(f"{employee.name} gave a shipit to {ticket.assignee.name} on {ticket.key}")
 
             # Are there any tickets that are in progress?
             # if so, burn them down and move to in-review if appropriate
@@ -186,7 +194,7 @@ class Ticket(db.Model):
         # we can do counting later.
         ticket_id = num_existing_tickets + 1 + project.ticket_offset
         key = f"{project.name}-{ticket_id}"
-        size = random.randrange(100)
+        size = random.randrange(1, 100)
         ticket = Ticket(
             project_id=project.id,
             key=key,
@@ -214,7 +222,18 @@ class Ticket(db.Model):
     def move_to_review(self, reviewer):
         self.state_id = TicketState.IN_REVIEW
         self.update_tick = self.project.game.ticks_elapsed
-        self.update_reviewer_id = reviewer.id
+        self.reviewer_id = reviewer.id
+        # ok how much effort is there?
+        # this should be some calculus of the assignee's skill level and the original sizing
+        # of the ticket
+        self.remaining_work = int(self.original_sizing * 0.5)
+        db.session.add(self)
+        db.session.commit()
+
+    def move_to_closed(self):
+        self.state_id = TicketState.CLOSED
+        self.update_tick = self.project.game.ticks_elapsed
+        self.reviewer_id = None
         db.session.add(self)
         db.session.commit()
 
@@ -247,6 +266,12 @@ class Ticket(db.Model):
         tickets = Ticket.query.filter(
             Ticket.assignee_id == employee_id,
             Ticket.state_id == TicketState.IN_PROGRESS
+        ).all()
+        return tickets
+
+    def get_tickets_to_review(employee_id):
+        tickets = Ticket.query.filter(
+            Ticket.reviewer_id == employee_id
         ).all()
         return tickets
 
@@ -337,7 +362,7 @@ class Employee(db.Model):
 
         employee = Employee(
             name=f"{first_name} {last_name}",
-            productivity=random.randrange(20),
+            productivity=random.randrange(1, 20),
             game_id=game_id
         )
 
