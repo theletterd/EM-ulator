@@ -1,15 +1,15 @@
 from collections import defaultdict
 import random
-import string
 
 from flask import Blueprint
 from flask import render_template
 from flask import redirect
 
 from em_ulator.models import Game
+from em_ulator.models import Employee
 from em_ulator.models import Project
 from em_ulator.models import Ticket
-from em_ulator import config
+
 
 home_app = Blueprint('home', __name__)
 
@@ -55,30 +55,18 @@ def force_tick(game_id):
 @home_app.route("/game/create", methods=["POST"])
 def create_game():
     game = Game.create_new_game()
-    from em_ulator import db
 
-    random_project_name = ''.join(random.sample(string.ascii_uppercase, random.randrange(3, 8)))
+    # create Employees linked to Game
+    for _ in range(random.randrange(10)):
+        Employee.new_employee(game.id)
 
-    project = Project(
-        name=random_project_name,
-        ticket_offset=random.randrange(1000),
-        game_id=game.id
-    )
-    db.session.add(project)
-    db.session.commit()
 
-    for i in range(20):
-        Ticket.new_ticket(
-            project,
-            random.choice(config.ticket_names),
-            "stuffff"
-        )
+    for _ in range(1):
+        project = Project.new_project(game.id)
 
-    # then create a project
-    # then create like 20 tickets in the project
-    # which are all in "TODO"
-    # Then redirect to game view which shows the tickets.
+        for _ in range(20):
+            Ticket.new_ticket(project.id)
 
-    # we are also going to need a ticket title generator, and a ticket description generator
+
     redirect_url = f'/game/{game.id}'
     return redirect(redirect_url)

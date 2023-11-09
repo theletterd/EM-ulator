@@ -19,11 +19,14 @@
 		{{ ticket.key }} - <span class="ticket_state" style="background-color: {{ ticket.state.color }}">{{ticket.state.name}}</span>
 	      </div>
 	      <div class="ticket-title">{{ ticket.title }}</div>
+	      {% if not ticket.is_closed %}
 	      <div class="ticket-progress">
 		{% for tick in range(ticket.tick_count) %}
+		{{ ticket.remaining_work }}
 		<div class="tick"></div>
 		{% endfor %}
 	      </div>
+	      {% endif%}
 	    </div>
 	    {% endfor %}
 	</div>
