@@ -42,7 +42,7 @@ def game(game_id):
         ("In Review", grouped_tickets["In Review"]),
         ("Done", grouped_tickets["Closed"])
     ]
-    return render_template("game.html", tickets_by_group=tickets_by_group, game_id=game_id)
+    return render_template("game.html", tickets_by_group=tickets_by_group, game=game)
 
 @home_app.route("/game/<int:game_id>/force_tick", methods=["POST"])
 def force_tick(game_id):
@@ -57,7 +57,7 @@ def create_game():
     game = Game.create_new_game()
 
     # create Employees linked to Game
-    for _ in range(random.randrange(10)):
+    for _ in range(random.randrange(4,10)):
         Employee.new_employee(game.id)
 
 

@@ -7,6 +7,7 @@ from em_ulator import config
 
 class Game(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    ticks_elapsed = db.Column(db.Integer, nullable=False, default=0)
 
     def percent_complete(self):
         tickets = self.get_all_tickets()
@@ -39,11 +40,18 @@ class Game(db.Model):
 
         return tickets
 
+    # maybe we don't tick the tickets, we increase the game tick,
+    # and record the last transition tick on the ticket instead.
 
     def tick(self):
+        self.ticks_elapsed += 1
+        db.session.add(self)
+        db.session.commit()
+
         # ok motherfucker
         # we need to get the employees
         employees = Employee.query.filter_by(game_id=self.id)
+
         for employee in employees:
             remaining_effort = employee.productivity
             # maybe we need a ticket percentage complete
@@ -65,16 +73,14 @@ class Game(db.Model):
 
             # really there should only be only one in-progress ticket, but who knows where
             # we'll end up.
-            print(f"what is {employee.name} up to?")
             while remaining_effort > 0:
                 in_progress_tickets = Ticket.get_assigned_in_progress_tickets(employee.id)
 
                 if not in_progress_tickets:
-                    print(f"{employee.name} has no tickets?")
                     # get_next_ticket
                     ticket = Ticket.assign_new_ticket(employee.id)
                     if ticket:
-                        print(f"{ticket.key} assigned to {employee.name}")
+                        print(f"{employee.name} picked up {ticket.key}")
                         continue
                     else:
                         # if no more tickets... "waiting state"
@@ -89,7 +95,7 @@ class Game(db.Model):
                     remaining_effort -= effort_to_expend
                     print(f"{employee.name} worked on {ticket.key}")
                     if ticket.remaining_work == 0:
-                        ticket.state_id = TicketState.IN_REVIEW
+                        ticket.move_to_review()
                         print(f"{employee.name} put {ticket.key} out for review")
 
             # Are there any tickets that are in progress?
@@ -156,7 +162,7 @@ class Ticket(db.Model):
     description = db.Column(db.String(2048), nullable=False)
     original_sizing = db.Column(db.Integer, nullable=False)
     remaining_work = db.Column(db.Integer, nullable=False)
-    tick_count = db.Column(db.Integer, nullable=False, default=1)
+    update_tick = db.Column(db.Integer, nullable=False, default=0)
 
     # e.g., JIRA-1234
     key = db.Column(db.String(120), unique=True, nullable=False)
@@ -183,7 +189,8 @@ class Ticket(db.Model):
             description="ehhhhh",
             original_sizing=size,
             remaining_work=size,
-            state_id=TicketState.OPEN
+            state_id=TicketState.OPEN,
+            update_tick=project.game.ticks_elapsed
         )
 
         db.session.add(ticket)
@@ -194,6 +201,12 @@ class Ticket(db.Model):
     @property
     def is_closed(self):
         return self.state_id == TicketState.CLOSED
+
+    def move_to_review(self):
+        self.state_id = TicketState.IN_REVIEW
+        self.update_tick = self.project.game.ticks_elapsed
+        db.session.add(self)
+        db.session.commit()
 
     def do_work(self, effort):
         self.remaining_work -= effort
@@ -218,8 +231,6 @@ class Ticket(db.Model):
             Ticket.assignee_id.is_(None),
             Ticket.state_id == TicketState.OPEN
         ).all()
-        print("unassigned open tickets")
-        print(tickets)
         return tickets
 
     def get_assigned_in_progress_tickets(employee_id):
@@ -227,8 +238,6 @@ class Ticket(db.Model):
             Ticket.assignee_id == employee_id,
             Ticket.state_id == TicketState.IN_PROGRESS
         ).all()
-        print("assigned in progress tickets")
-        print(tickets)
         return tickets
 
     def transition(self):
@@ -245,7 +254,7 @@ class Ticket(db.Model):
             self.state_id = self.state.next_state_id
             self.tick_count = 0
 
-            #self.mutate()
+            self.mutate()
 
         db.session.add(self)
         db.session.commit()

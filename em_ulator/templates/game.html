@@ -3,7 +3,7 @@
 {% block content %}
     <h3>Game {{ game_id }}
     <div class="force-tick">
-      <form action="/game/{{ game_id }}/force_tick" method="POST">
+      <form action="/game/{{ game.id }}/force_tick" method="POST">
 	<button type="submit">What about tomorrow?</button>
       </form>
     </div>
@@ -21,11 +21,11 @@
 	      <div class="ticket-title">{{ ticket.title }}</div>
 	      {% if not ticket.is_closed %}
 	      <div class="ticket-progress">
-		{% for tick in range(ticket.tick_count) %}
-		{{ ticket.remaining_work }}
+		{% for tick in range(game.ticks_elapsed - ticket.update_tick) %}
 		<div class="tick"></div>
 		{% endfor %}
 	      </div>
+		{{ ticket.remaining_work }}
 	      {% endif%}
 	    </div>
 	    {% endfor %}
